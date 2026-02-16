@@ -25,7 +25,6 @@ class Bank:
         		raise ValueError("Account not found")
     		account.withdraw(amount)
 
-
 	def get_account(self, account_number):
 		return self.accounts.get(account_number)
 
