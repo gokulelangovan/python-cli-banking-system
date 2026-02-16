@@ -1,24 +1,56 @@
-# Python CLI Banking System
+Python CLI Banking System
 
-A simple command-line banking application built using Python and OOP principles.
+A structured multi-account command-line banking application built using Python and Object-Oriented Programming principles.
 
-## Features
+This project demonstrates layered architecture, exception handling, and clean separation of concerns.
 
-- Object-Oriented Design
-- Deposit & Withdraw
-- Input Validation
-- Rich Status Check
-- CLI Menu System
-- Multi-file Project Structure
+🚀 Features
 
-## Tech Used
+Create multiple bank accounts
 
-- Python
-- OOP
-- Git
-- CLI
+Auto-generated unique account numbers
 
-## How to Run
+Deposit with validation
 
-```bash
+Withdraw with balance checks
+
+Prevention of negative transactions
+
+Proper exception propagation
+
+Clean CLI interaction
+
+Layered project structure
+
+🧠 Concepts Demonstrated
+
+Object-Oriented Programming (OOP)
+
+Encapsulation
+
+Exception handling & propagation
+
+Layered architecture (UI → Service → Entity)
+
+In-memory data management
+
+Input validation discipline
+
+📁 Project Structure
+project/
+│
+├── main.py
+└── models/
+    ├── bank.py
+    └── bank_account.py
+
+🛠 Tech Stack
+
+Python
+
+CLI
+
+Git & GitHub
+
+▶ How to Run
 python main.py
