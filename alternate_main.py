@@ -19,7 +19,7 @@ while True:
             owner = input("Enter owner name: ")
             balance = float(input("Enter initial balance: "))
             acc_no = bank.create_account(owner, balance)
-            print(f"Account created successfully. Account Number: {acc_no} and ${balance:.2f}")
+            print(f"Account created successfully. Account Number: {acc_no}")
         except ValueError as e:
             print(e)
 
@@ -35,11 +35,11 @@ while True:
 
             if not account:
                 print("Account not found.")
-                continue
+                continue  # ⬅ immediately go back to menu
 
             amount = float(input("Enter deposit amount: "))
-            new_balance = bank.deposit(acc_no, amount)
-            print(f"Deposit Successful. Updated Balance in Account {acc_no}: ${new_balance:.2f}")
+            bank.deposit(acc_no, amount)
+            print("Deposit successful")
 
         except ValueError as e:
             print(e)
@@ -56,11 +56,11 @@ while True:
 
             if not account:
                 print("Account not found.")
-                continue
+                continue  # ⬅ immediately go back to menu
 
             amount = float(input("Enter withdraw amount: "))
-            new_balance = bank.withdraw(acc_no, amount)
-            print(f"Withdraw Successful. Updated Balance in Account {acc_no}: ${new_balance:.2f}")
+            bank.withdraw(acc_no, amount)
+            print("Withdraw successful")
 
         except ValueError as e:
             print(e)

@@ -20,7 +20,4 @@ class BankAccount:
 		self.balance -= amount
 	
 	def display(self):
-		print(f"Account No: {self.account_number}")
-		print(f"Owner: {self.owner}")
-		print(f"Balance: {self.balance}")
-		print("-" * 30)
+		print(f"Acc No: {self.account_number} | Owner: {self.owner} | Balance: ${self.balance:,.2f}")

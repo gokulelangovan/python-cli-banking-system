@@ -5,6 +5,9 @@ class Bank:
 		self.bank_name = bank_name
 		self.accounts = {}
 		self.next_account_number = 1001
+	
+	def __str__(self):
+        	return f"----------WELCOME to {self.bank_name}----------"
 
 	def create_account(self, owner, balance):
 		acc_no = self.next_account_number
@@ -14,23 +17,25 @@ class Bank:
 		return acc_no
 	
 	def deposit(self, account_number, amount):
-		account = self.get_account(account_number)
-		if not account:
-			raise ValueError("Account not found")
-		account.deposit(amount)
+    		account = self.get_account(account_number)
+    		if not account:
+        		raise ValueError("Account not found")
+    		account.deposit(amount)
+    		return account.balance
 
 	def withdraw(self, account_number, amount):
     		account = self.get_account(account_number)
     		if not account:
         		raise ValueError("Account not found")
     		account.withdraw(amount)
+    		return account.balance
 
 	def get_account(self, account_number):
 		return self.accounts.get(account_number)
 
 	def display_all_accounts(self):
         	if not self.accounts:
-            		print("No accounts found.")
+            		print("Empty Accounts --- New Account to be registered")
         	else:
             		for account in self.accounts.values():
                 		account.display()
