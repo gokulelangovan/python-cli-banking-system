@@ -45,15 +45,14 @@ The system stores account data in accounts.json.
 ---
 
 ## 📁 Project Structure
-
+```
 project/
  ├── main.py
  ├── accounts.json (auto-generated)
  └── models/
       ├── bank.py
       └── bank_account.py
-
-
+```
 ---
 
 ## 🛠 Tech Stack
