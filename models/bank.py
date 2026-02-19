@@ -80,3 +80,31 @@ class Bank:
         else:
             for account in self.accounts.values():
                 account.display()
+
+# ------------------ Transfer Operations ------------------
+
+    def transfer(self, from_acc, to_acc, amount):
+        sender = self.get_account(from_acc)
+        if not sender:
+            raise ValueError("Sender account not found")
+
+        receiver = self.get_account(to_acc)
+        if not receiver:
+            raise ValueError("Receiver account not found")
+
+        if from_acc == to_acc:
+            raise ValueError("Cannot transfer to the same account")
+
+        if amount <= 0:
+            raise ValueError("Transfer amount must be positive")
+
+        if sender.balance < amount:
+            raise ValueError("Insufficient funds in sender account")
+
+        # Perform transfer
+        sender.withdraw(amount)
+        receiver.deposit(amount)
+
+        self.save_accounts()
+
+        return sender.balance, receiver.balance

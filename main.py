@@ -8,8 +8,9 @@ while True:
     print("\n1. Create Account")
     print("2. Deposit")
     print("3. Withdraw")
-    print("4. Display All Accounts")
-    print("5. Exit")
+    print("4. Transfer")
+    print("5. Display All Accounts")
+    print("6. Exit")
 
     choice = input("Choose an option: ")
 
@@ -65,8 +66,40 @@ while True:
         except ValueError as e:
             print(e)
 
-    # 🔹 DISPLAY
+    # 🔹 Transfer
     elif choice == "4":
+        try:
+            # Sender validation loop
+            while True:
+                from_acc = int(input("Enter sender account number: "))
+                if bank.get_account(from_acc):
+                    break
+                print("Sender account not found. Try again.")
+
+            # Receiver validation loop
+            while True:
+                to_acc = int(input("Enter receiver account number: "))
+                if not bank.get_account(to_acc):
+                    print("Receiver account not found. Try again.")
+                    continue
+                if to_acc == from_acc:
+                    print("Cannot transfer to same account.")
+                    continue
+                break
+
+            amount = float(input("Enter transfer amount: "))
+
+            sender_balance, receiver_balance = bank.transfer(from_acc, to_acc, amount)
+
+            print("Transfer Successful.")
+            print(f"Sender (Acc {from_acc}) New Balance   : ₹{sender_balance:.2f}")
+            print(f"Receiver (Acc {to_acc}) New Balance : ₹{receiver_balance:.2f}")
+
+        except ValueError as e:
+            print(e)
+            
+    # 🔹 DISPLAY
+    elif choice == "5":
         if not bank.accounts:
             print("No accounts found. Please create an account first.")
             continue
@@ -74,7 +107,7 @@ while True:
         bank.display_all_accounts()
 
     # 🔹 EXIT
-    elif choice == "5":
+    elif choice == "6":
         print("Exiting...")
         break
 
