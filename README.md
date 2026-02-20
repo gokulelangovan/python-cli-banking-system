@@ -2,7 +2,7 @@
 
 A structured multi-account command-line banking application built using Python and Object-Oriented Programming principles.
 
-This project demonstrates layered architecture, exception propagation, and JSON-based state persistence.
+This project evolved from a simple CLI exercise into a stateful backend-style system with layered architecture, transaction logging, and JSON-based persistence.
 
 ---
 
@@ -12,11 +12,13 @@ This project demonstrates layered architecture, exception propagation, and JSON-
 - Auto-generated unique account numbers
 - Deposit with validation
 - Withdraw with balance checks
+- Transfer between accounts
+- Transaction history (ledger per account)
 - Prevention of negative transactions
 - Proper exception propagation
 - JSON-based data persistence
-- Automatic ID continuity after restart
-- Clean CLI interaction
+- Nested object reconstruction from stored data
+- Clean CLI interaction with formatted ledger display
 - Layered project structure (UI → Service → Entity)
 
 ---
@@ -29,6 +31,9 @@ This project demonstrates layered architecture, exception propagation, and JSON-
 - Layered backend-style architecture
 - JSON serialization and deserialization
 - State persistence across runs
+- Nested data persistence
+- Object reconstruction from disk
+- Coordinated multi-entity state mutation
 - Controlled mutation boundaries
 - Input validation discipline
 
@@ -37,10 +42,22 @@ This project demonstrates layered architecture, exception propagation, and JSON-
 ## 💾 Data Persistence
 
 The system stores account data in accounts.json.
-- Accounts are automatically saved after every mutation (create, deposit, withdraw)
+- Accounts are automatically saved after every mutation (create, deposit, withdraw, transfer)
+- Transaction history is persisted as nested data
 - Data is restored automatically on program startup
 - Account numbers continue correctly after restart
-- Persistence logic is handled entirely inside the Bank service layer
+- Ledger entries survive across sessions
+
+---
+
+## 📜 Transaction Ledger
+
+Each account maintains a transaction history including:
+- Transaction type (deposit, withdraw, transfer_in, transfer_out)
+- Amount
+- Balance after transaction
+- Timestamp
+History is formatted and displayed cleanly through the CLI.
 
 ---
 
