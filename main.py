@@ -9,8 +9,9 @@ while True:
     print("2. Deposit")
     print("3. Withdraw")
     print("4. Transfer")
-    print("5. Display All Accounts")
-    print("6. Exit")
+    print("5. View Transaction History")
+    print("6. Display All Accounts")
+    print("7. Exit")
 
     choice = input("Choose an option: ")
 
@@ -97,9 +98,39 @@ while True:
 
         except ValueError as e:
             print(e)
-            
-    # 🔹 DISPLAY
+    
+    # 🔹 TRANSACTIONS
     elif choice == "5":
+        try:
+            acc_no = int(input("Enter account number: "))
+            account = bank.get_account(acc_no)
+            
+            if not account:
+                print("Account not found.")
+            elif not account.transactions:
+                print("No transactions found.")
+            else:
+                print(f"\n--- Transaction History (Account {acc_no}) ---\n")
+                
+                for index, txn in enumerate(account.transactions, start=1):
+                    txn_type = txn["type"].replace("_", " ").title()
+                    amount = txn["amount"]
+                    balance_after = txn["balance_after"]
+                    timestamp = txn["timestamp"]
+
+                    print(
+                        f"{index}. [{timestamp}] "
+                        f"{txn_type:<12} "
+                        f"₹{amount:.2f} → Balance: ₹{balance_after:.2f}"
+                    )
+
+                print("-" * 50)
+                
+        except ValueError:
+            print("Please enter a valid account number.")
+
+    # 🔹 DISPLAY
+    elif choice == "6":
         if not bank.accounts:
             print("No accounts found. Please create an account first.")
             continue
@@ -107,7 +138,7 @@ while True:
         bank.display_all_accounts()
 
     # 🔹 EXIT
-    elif choice == "6":
+    elif choice == "7":
         print("Exiting...")
         break
 

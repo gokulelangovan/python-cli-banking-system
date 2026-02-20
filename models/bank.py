@@ -104,6 +104,8 @@ class Bank:
         # Perform transfer
         sender.withdraw(amount)
         receiver.deposit(amount)
+        sender.add_transaction("transfer_out", amount)
+        receiver.add_transaction("transfer_in", amount)
 
         self.save_accounts()
 

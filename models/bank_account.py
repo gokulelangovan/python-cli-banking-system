@@ -1,3 +1,4 @@
+from datetime import datetime
 class BankAccount:
     def __init__(self, account_number, owner, balance):
         if balance < 0:
@@ -6,7 +7,7 @@ class BankAccount:
         self.account_number = account_number
         self.owner = owner
         self.balance = balance
-
+        self.transactions = []
     # ------------------ Core Operations ------------------
 
     def deposit(self, amount):
@@ -14,6 +15,7 @@ class BankAccount:
             raise ValueError("Deposit amount must be positive")
 
         self.balance += amount
+        self.add_transaction("deposit",amount)
 
     def withdraw(self, amount):
         if amount <= 0:
@@ -23,6 +25,7 @@ class BankAccount:
             raise ValueError("Insufficient funds")
 
         self.balance -= amount
+        self.add_transaction("withdraw",amount)
 
     # ------------------ Serialization ------------------
 
@@ -30,17 +33,32 @@ class BankAccount:
         return {
             "account_number": self.account_number,
             "owner": self.owner,
-            "balance": self.balance
+            "balance": self.balance,
+            "transactions": self.transactions
         }
 
     @classmethod
     def from_dict(cls, data):
-        return cls(
+        account = cls(
             data["account_number"],
             data["owner"],
             data["balance"]
         )
+        account.transactions = data.get("transactions", [])
+        return account
 
+    # ------------------ Transactions -------------------
+    
+    def add_transaction(self, txn_type, amount):
+        transaction = {
+            "type" : txn_type,
+            "amount": amount,
+            "balance_after" : self.balance,
+            "timestamp" : datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            }
+           
+        self.transactions.append(transaction)
+            
     # ------------------ Display ------------------
 
     def display(self):
