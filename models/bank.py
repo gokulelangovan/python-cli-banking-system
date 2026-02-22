@@ -85,28 +85,64 @@ class Bank:
 
     def transfer(self, from_acc, to_acc, amount):
         sender = self.get_account(from_acc)
+        receiver = self.get_account(to_acc)
+
         if not sender:
             raise ValueError("Sender account not found")
-
-        receiver = self.get_account(to_acc)
         if not receiver:
             raise ValueError("Receiver account not found")
-
-        if from_acc == to_acc:
-            raise ValueError("Cannot transfer to the same account")
-
         if amount <= 0:
             raise ValueError("Transfer amount must be positive")
+        if amount > sender.balance:
+            raise ValueError("Insufficient funds")
 
-        if sender.balance < amount:
-            raise ValueError("Insufficient funds in sender account")
+        # Direct balance mutation (not using withdraw/deposit)
+        sender.balance -= amount
+        receiver.balance += amount
 
-        # Perform transfer
-        sender.withdraw(amount)
-        receiver.deposit(amount)
+        # Log only transfer events
         sender.add_transaction("transfer_out", amount)
         receiver.add_transaction("transfer_in", amount)
 
         self.save_accounts()
 
         return sender.balance, receiver.balance
+        
+ # ------------------ Export Statement ------------------   
+
+    def export_statement(self, account_number):
+        account = self.get_account(account_number)
+        
+        if not account:
+            raise ValueError("Account not found")
+            
+        if not account.transactions:
+            raise ValueError("No transactions found for this account")
+            
+        file_name = f"statement_{account_number}.txt"
+        
+        with open(file_name, "w", encoding="utf-8") as file:
+            file.write(f"{self.bank_name.upper()} - ACCOUNT STATEMENT\n")
+            file.write(f"Account No: {account.account_number}\n")
+            file.write(f"Owner: {account.owner}\n")
+            file.write("-" * 50 + "\n\n")
+            
+            for index, txn in enumerate(account.transactions, start=1):
+                txn_type = txn["type"].replace("_", " ").title()
+                amount = txn["amount"]
+                balance_after = txn["balance_after"]
+                timestamp = txn["timestamp"]
+                
+                line = (
+                    f"{index}. [{timestamp}] "
+                    f"{txn_type:<12}"
+                    f"₹{amount:.2f} → Balance: ₹{balance_after:.2f}\n"
+                )  
+                
+                file.write(line)
+                
+        return file_name
+
+            
+            
+ 

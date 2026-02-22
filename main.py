@@ -2,7 +2,34 @@ from models.bank import Bank
 
 bank = Bank("Goku Bank")
 
-print(f"----------WELCOME to {bank.bank_name}----------")
+
+# ------------------ Helper Functions ------------------
+
+def success(message):
+    print(f"✔ {message}")
+
+
+def error(message):
+    print(f"✖ {message}")
+
+
+def get_int_input(prompt):
+    try:
+        return int(input(prompt).strip())
+    except ValueError:
+        raise ValueError("Please enter a valid number.")
+
+
+def get_float_input(prompt):
+    try:
+        return float(input(prompt).strip())
+    except ValueError:
+        raise ValueError("Please enter a valid amount.")
+
+
+# ------------------ Main Program ------------------
+
+print(f"\n---------- WELCOME TO {bank.bank_name.upper()} ----------")
 
 while True:
     print("\n1. Create Account")
@@ -11,107 +38,89 @@ while True:
     print("4. Transfer")
     print("5. View Transaction History")
     print("6. Display All Accounts")
-    print("7. Exit")
+    print("7. Export Account Statement")
+    print("8. Exit")
 
-    choice = input("Choose an option: ")
+    choice = input("Choose an option: ").strip()
 
     # 🔹 CREATE ACCOUNT
     if choice == "1":
-        try:
-            owner = input("Enter owner name: ")
-            balance = float(input("Enter initial balance: "))
-            acc_no = bank.create_account(owner, balance)
-            print(f"Account created successfully. Account Number: {acc_no} and ${balance:.2f}")
-        except ValueError as e:
-            print(e)
+    # Loop until account creation succeeds
+        while True:
+            try:
+                owner = input("Enter owner name: ").strip()
+                balance = float(input("Enter initial balance: "))
+
+                acc_no = bank.create_account(owner, balance)
+                success(f"Account created. Account No: {acc_no} | Balance: ₹{balance:.2f}")
+                break
+
+            except ValueError as e:
+                error(e)
 
     # 🔹 DEPOSIT
     elif choice == "2":
-        if not bank.accounts:
-            print("No accounts found. Please create an account first.")
-            continue
-
         try:
-            acc_no = int(input("Enter account number: "))
-            account = bank.get_account(acc_no)
-
-            if not account:
-                print("Account not found.")
-                continue
-
-            amount = float(input("Enter deposit amount: "))
+            acc_no = get_int_input("Enter account number: ")
+            amount = get_float_input("Enter deposit amount: ")
             new_balance = bank.deposit(acc_no, amount)
-            print(f"Deposit Successful. Updated Balance in Account {acc_no}: ${new_balance:.2f}")
-
+            success(f"Deposit successful. Updated Balance (Acc {acc_no}): ₹{new_balance:.2f}")
         except ValueError as e:
-            print(e)
+            error(e)
 
     # 🔹 WITHDRAW
     elif choice == "3":
-        if not bank.accounts:
-            print("No accounts found. Please create an account first.")
-            continue
-
         try:
-            acc_no = int(input("Enter account number: "))
-            account = bank.get_account(acc_no)
-
-            if not account:
-                print("Account not found.")
-                continue
-
-            amount = float(input("Enter withdraw amount: "))
+            acc_no = get_int_input("Enter account number: ")
+            amount = get_float_input("Enter withdraw amount: ")
             new_balance = bank.withdraw(acc_no, amount)
-            print(f"Withdraw Successful. Updated Balance in Account {acc_no}: ${new_balance:.2f}")
-
+            success(f"Withdraw successful. Updated Balance (Acc {acc_no}): ₹{new_balance:.2f}")
         except ValueError as e:
-            print(e)
+            error(e)
 
-    # 🔹 Transfer
+    # 🔹 TRANSFER
     elif choice == "4":
         try:
-            # Sender validation loop
             while True:
-                from_acc = int(input("Enter sender account number: "))
+                from_acc = get_int_input("Enter sender account number: ")
                 if bank.get_account(from_acc):
                     break
-                print("Sender account not found. Try again.")
+                error("Sender account not found. Try again.")
 
-            # Receiver validation loop
             while True:
-                to_acc = int(input("Enter receiver account number: "))
+                to_acc = get_int_input("Enter receiver account number: ")
                 if not bank.get_account(to_acc):
-                    print("Receiver account not found. Try again.")
+                    error("Receiver account not found. Try again.")
                     continue
                 if to_acc == from_acc:
-                    print("Cannot transfer to same account.")
+                    error("Cannot transfer to same account.")
                     continue
                 break
 
-            amount = float(input("Enter transfer amount: "))
+            amount = get_float_input("Enter transfer amount: ")
 
             sender_balance, receiver_balance = bank.transfer(from_acc, to_acc, amount)
 
-            print("Transfer Successful.")
-            print(f"Sender (Acc {from_acc}) New Balance   : ₹{sender_balance:.2f}")
-            print(f"Receiver (Acc {to_acc}) New Balance : ₹{receiver_balance:.2f}")
+            success("Transfer successful.")
+            print(f"   Sender (Acc {from_acc})   → ₹{sender_balance:.2f}")
+            print(f"   Receiver (Acc {to_acc}) → ₹{receiver_balance:.2f}")
 
         except ValueError as e:
-            print(e)
-    
-    # 🔹 TRANSACTIONS
+            error(e)
+
+    # 🔹 VIEW TRANSACTION HISTORY
     elif choice == "5":
         try:
-            acc_no = int(input("Enter account number: "))
+            acc_no = get_int_input("Enter account number: ")
             account = bank.get_account(acc_no)
-            
+
             if not account:
-                print("Account not found.")
+                error("Account not found.")
             elif not account.transactions:
-                print("No transactions found.")
+                error("No transactions found.")
             else:
                 print(f"\n--- Transaction History (Account {acc_no}) ---\n")
-                
+
                 for index, txn in enumerate(account.transactions, start=1):
                     txn_type = txn["type"].replace("_", " ").title()
                     amount = txn["amount"]
@@ -125,22 +134,59 @@ while True:
                     )
 
                 print("-" * 50)
-                
-        except ValueError:
-            print("Please enter a valid account number.")
 
-    # 🔹 DISPLAY
+        except ValueError as e:
+            error(e)
+
+    # 🔹 DISPLAY ALL ACCOUNTS
     elif choice == "6":
         if not bank.accounts:
-            print("No accounts found. Please create an account first.")
-            continue
+            error("No accounts found.")
+        else:
+            bank.display_all_accounts()
 
-        bank.display_all_accounts()
+    # 🔹 EXPORT STATEMENT (Single + Multiple)
+    elif choice == "7":
+        print("\n1. Export Single Account")
+        print("2. Export Multiple Accounts")
+
+        sub_choice = input("Choose option: ").strip()
+
+        # Single
+        if sub_choice == "1":
+            try:
+                acc_no = get_int_input("Enter account number: ")
+                file_name = bank.export_statement(acc_no)
+                success(f"Statement exported → {file_name}")
+            except ValueError as e:
+                error(e)
+
+        # Multiple
+        elif sub_choice == "2":
+            raw_input_accounts = input("Enter account numbers separated by comma: ").strip()
+
+            try:
+                account_numbers = [
+                    int(acc.strip()) for acc in raw_input_accounts.split(",")
+                ]
+
+                for acc_no in account_numbers:
+                    try:
+                        file_name = bank.export_statement(acc_no)
+                        success(f"Statement exported → {file_name}")
+                    except ValueError as e:
+                        error(f"Account {acc_no} → {e}")
+
+            except ValueError:
+                error("Invalid account list format.")
+
+        else:
+            error("Invalid option.")
 
     # 🔹 EXIT
-    elif choice == "7":
-        print("Exiting...")
+    elif choice == "8":
+        print("Exiting... 👋")
         break
 
     else:
-        print("Invalid choice.")
+        error("Invalid choice.")
