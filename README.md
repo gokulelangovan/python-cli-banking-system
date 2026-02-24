@@ -135,6 +135,8 @@ python main.py
 
 ```
 
+---
+
 ## 📁 Project Structure
 
 ```
@@ -152,6 +154,9 @@ project/
 ```
 Runtime files such as `accounts.json`, `statement_*.txt`, and `__pycache__/` are excluded from version control.
 
+---
+
 ## 👨‍💻 Author
+
 Gokul Elangovan
 [Backend-focused learning project]
