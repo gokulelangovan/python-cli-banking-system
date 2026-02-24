@@ -133,13 +133,11 @@ This tag represents a freeze-ready, restart-safe, ledger-consistent version of t
 ```bash
 python main.py
 
----
+```
 
 ## 📁 Project Structure
 
-
-Runtime files such as accounts.json, statement_*.txt, and __pycache__/ are excluded from version control.
-
+```
 project/
 │
 ├── main.py
@@ -151,10 +149,9 @@ project/
 ├── bank.py
 ├── bank_account.py
 └── utils.py
-
+```
 Runtime files such as `accounts.json`, `statement_*.txt`, and `__pycache__/` are excluded from version control.
 
-
-## Author
+## 👨‍💻 Author
 Gokul Elangovan
 [Backend-focused learning project]
