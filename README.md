@@ -158,5 +158,5 @@ Runtime files such as `accounts.json`, `statement_*.txt`, and `__pycache__/` are
 
 ## 👨‍💻 Author
 
-Gokul Elangovan
+***Gokul Elangovan***
 [Backend-focused learning project]
