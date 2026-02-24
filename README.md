@@ -137,23 +137,24 @@ python main.py
 
 ## 📁 Project Structure
 
+
 Runtime files such as accounts.json, statement_*.txt, and __pycache__/ are excluded from version control.
 
-```
 project/
 │
 ├── main.py
 ├── README.md
 ├── Bank_exe.bat
-├── models/
-│   ├── bank.py
-│   ├── bank_account.py
-│   ├── utils.py
-│   └── __init__.py
+│
+└── models/
+├── init.py
+├── bank.py
+├── bank_account.py
+└── utils.py
 
-```
+Runtime files such as `accounts.json`, `statement_*.txt`, and `__pycache__/` are excluded from version control.
 
-## 👨‍💻 Author
 
-*Gokul Elangovan*
+## Author
+Gokul Elangovan
 [Backend-focused learning project]
