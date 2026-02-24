@@ -1,83 +1,130 @@
-# Python CLI Banking System
+# 🏦 CLI Banking System
 
-A structured multi-account command-line banking application built using Python and Object-Oriented Programming principles.
+**Version:** v1.0  
+**Status:** Stable Release  
+**Architecture:** Layered (CLI → Service → Entity → JSON Persistence)
 
-This project evolved from a simple CLI exercise into a stateful backend-style system with layered architecture, transaction logging, and JSON-based persistence.
+---
+
+## 📌 Overview
+
+CLI Banking System is a multi-account banking simulation built in Python to demonstrate structured backend architecture, transaction modeling, and persistence handling.
+
+This project evolved from basic scripting into a layered backend-style system with defensive CLI design, restart integrity, and version control discipline.
 
 ---
 
 ## 🚀 Features
 
-- Create multiple bank accounts
+### 🧾 Account Management
+- Create multiple accounts
 - Auto-generated unique account numbers
-- Deposit with validation
-- Withdraw with balance checks
-- Transfer between accounts
-- Transaction history (ledger per account)
-- Prevention of negative transactions
-- Proper exception propagation
-- JSON-based data persistence
-- Nested object reconstruction from stored data
-- Clean CLI interaction with formatted ledger display
-- Layered project structure (UI → Service → Entity)
+- Owner name normalization (`.title()`)
+- Delete single account (with confirmation)
+- Reset entire system
+- No account ID reuse (audit integrity preserved)
+
+### 💰 Transactions
+- Deposit
+- Withdraw
+- Transfer (clean dual-entry ledger model)
+- No self-transfer allowed
+- No negative amounts allowed
+- Insufficient fund protection
+- Timestamped transaction entries
+
+### 📜 Transaction History
+- View single account history
+- View all accounts history
+- Clean formatted ledger display
+
+### 📁 Statement Export
+- Export single account statement
+- Export all accounts statements
+- Skips accounts with no transactions
+
+### 💾 Persistence
+- JSON-based storage (`accounts.json`)
+- Data survives restarts
+- Account numbers generated using:
+- max(existing_ids) + 1
+- Runtime files excluded via `.gitignore`
 
 ---
 
-## 🧠 Concepts Demonstrated
+## 🏗 Architecture
+CLI Layer (main.py)
+↓
+Service Layer (Bank)
+↓
+Entity Layer (BankAccount)
+↓
+Persistence Layer (JSON)
 
-- Object-Oriented Programming (OOP)
-- Encapsulation and separation of concerns
-- Exception handling and propagation
-- Layered backend-style architecture
-- JSON serialization and deserialization
-- State persistence across runs
-- Nested data persistence
-- Object reconstruction from disk
-- Coordinated multi-entity state mutation
-- Controlled mutation boundaries
-- Input validation discipline
+### Layer Responsibilities
 
----
+#### CLI Layer
+- User interaction
+- Retry handling
+- Cancel guardrails (0 to cancel)
+- Submenu structure
+- Output formatting
 
-## 💾 Data Persistence
+#### Service Layer (Bank)
+- Account coordination
+- Deposit / Withdraw / Transfer orchestration
+- Persistence handling
+- ID continuity control
+- Deletion management
 
-The system stores account data in accounts.json.
-- Accounts are automatically saved after every mutation (create, deposit, withdraw, transfer)
-- Transaction history is persisted as nested data
-- Data is restored automatically on program startup
-- Account numbers continue correctly after restart
-- Ledger entries survive across sessions
-
----
-
-## 📜 Transaction Ledger
-
-Each account maintains a transaction history including:
-- Transaction type (deposit, withdraw, transfer_in, transfer_out)
-- Amount
-- Balance after transaction
-- Timestamp
-History is formatted and displayed cleanly through the CLI.
+#### Entity Layer (BankAccount)
+- Business rule validation
+- Balance ownership
+- Ledger management
+- Transaction recording
 
 ---
 
-## 📁 Project Structure
-```
-project/
- ├── main.py
- ├── accounts.json (auto-generated)
- └── models/
-      ├── bank.py
-      └── bank_account.py
-```
+## 🧠 Engineering Principles Applied
+
+- Separation of concerns
+- Layered architecture
+- Defensive CLI design
+- Transaction semantics modeling
+- ID continuity (no reuse of deleted IDs)
+- Persistence lifecycle awareness
+- Version tagging discipline
+- Repository hygiene via `.gitignore`
+
 ---
 
-## 🛠 Tech Stack
+## ⚠ Limitations (v1)
 
-- Python
-- CLI
-- JSON
-- Git & GitHub
+- No database backend (JSON only)
+- No authentication system
+- No concurrency handling
+- No soft-delete mechanism
+- No automated test suite
+
+---
+
+## 🛣 Roadmap (v2 Planned)
+
+- Replace JSON with SQLite
+- Introduce Repository Layer
+- Add authentication
+- Convert to REST API (FastAPI)
+- Add unit testing (pytest)
+- Introduce soft-delete support
+
+---
+
+## 🏷 Release Information
+
+**Tag:** `v1.0-cli-banking`  
+**Release Type:** Stable CLI Version  
+
+This tag represents a freeze-ready, restart-safe, ledger-consistent version of the system.
 
 ---
 
@@ -85,3 +132,28 @@ project/
 
 ```bash
 python main.py
+
+---
+
+## 📁 Project Structure
+
+Runtime files such as accounts.json, statement_*.txt, and __pycache__/ are excluded from version control.
+
+```
+project/
+│
+├── main.py
+├── README.md
+├── Bank_exe.bat
+├── models/
+│   ├── bank.py
+│   ├── bank_account.py
+│   ├── utils.py
+│   └── __init__.py
+
+```
+
+## 👨‍💻 Author
+
+*Gokul Elangovan*
+[Backend-focused learning project]
