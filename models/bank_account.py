@@ -1,12 +1,12 @@
 from datetime import datetime
 class BankAccount:
     def __init__(self, account_number, owner, balance):
-        owner = owner.strip()
+        owner = owner.strip().title()
 
         if not owner:
             raise ValueError("Owner name cannot be empty.")
 
-        if not all(char.isalpha() or char.isspace() for char in owner):
+        elif not all(char.isalpha() or char.isspace() for char in owner):
             raise ValueError("Owner name must contain only letters and spaces.")
 
         if balance < 0:

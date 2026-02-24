@@ -143,6 +143,13 @@ class Bank:
                 
         return file_name
 
+# ------------------ Delete Account ------------------   
+
+    def delete_account(self, account_number):
+        if account_number not in self.accounts:
+            raise ValueError("Account not found")
             
+        del self.accounts[account_number]
+        self.save_accounts()
             
  
