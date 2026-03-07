@@ -90,7 +90,7 @@ This creates the SQLite database and tables.
 ## 4️⃣ Run the API server
 
 ```bash
-uvicorn main:app --reload
+python -m uvicorn main:app --reload
 ```
 
 ---
