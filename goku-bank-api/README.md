@@ -1,162 +1,184 @@
-# 🏦 CLI Banking System
+# 🏦 Goku Bank API
 
-**Version:** v1.0  
-**Status:** Stable Release  
-**Architecture:** Layered (CLI → Service → Entity → JSON Persistence)
+A lightweight **Banking Backend API** built with **FastAPI** that simulates core banking operations such as deposits, withdrawals, transfers, and transaction history.
 
----
-
-## 📌 Overview
-
-CLI Banking System is a multi-account banking simulation built in Python to demonstrate structured backend architecture, transaction modeling, and persistence handling.
-
-This project evolved from basic scripting into a layered backend-style system with defensive CLI design, restart integrity, and version control discipline.
+This project focuses on **clean backend architecture**, modular design, and safe transaction handling.
 
 ---
 
-## 🚀 Features
+# 🚀 Features
 
-### 🧾 Account Management
-- Create multiple accounts
-- Auto-generated unique account numbers
-- Owner name normalization (`.title()`)
-- Delete single account (with confirmation)
-- Reset entire system
-- No account ID reuse (audit integrity preserved)
-
-### 💰 Transactions
-- Deposit
-- Withdraw
-- Transfer (clean dual-entry ledger model)
-- No self-transfer allowed
-- No negative amounts allowed
-- Insufficient fund protection
-- Timestamped transaction entries
-
-### 📜 Transaction History
-- View single account history
-- View all accounts history
-- Clean formatted ledger display
-
-### 📁 Statement Export
-- Export single account statement
-- Export all accounts statements
-- Skips accounts with no transactions
-
-### 💾 Persistence
-- JSON-based storage (`accounts.json`)
-- Data survives restarts
-- Account numbers generated using:
-- max(existing_ids) + 1
-- Runtime files excluded via `.gitignore`
+- Create customer accounts
+- Deposit money
+- Withdraw money with balance validation
+- Atomic money transfers between accounts
+- Transaction history tracking
+- Input validation using **Pydantic**
+- Logging for audit and debugging
+- Modular backend architecture
 
 ---
 
-## 🏗 Architecture
-CLI Layer (main.py)
-↓
-Service Layer (Bank)
-↓
-Entity Layer (BankAccount)
-↓
-Persistence Layer (JSON)
+# 🧠 Tech Stack
 
-### Layer Responsibilities
-
-#### CLI Layer
-- User interaction
-- Retry handling
-- Cancel guardrails (0 to cancel)
-- Submenu structure
-- Output formatting
-
-#### Service Layer (Bank)
-- Account coordination
-- Deposit / Withdraw / Transfer orchestration
-- Persistence handling
-- ID continuity control
-- Deletion management
-
-#### Entity Layer (BankAccount)
-- Business rule validation
-- Balance ownership
-- Ledger management
-- Transaction recording
+- Python
+- FastAPI
+- SQLite
+- Pydantic
+- Uvicorn
 
 ---
 
-## 🧠 Engineering Principles Applied
+# 📂 Project Structure
 
-- Separation of concerns
-- Layered architecture
-- Defensive CLI design
-- Transaction semantics modeling
-- ID continuity (no reuse of deleted IDs)
-- Persistence lifecycle awareness
-- Version tagging discipline
-- Repository hygiene via `.gitignore`
-
----
-
-## ⚠ Limitations (v1)
-
-- No database backend (JSON only)
-- No authentication system
-- No concurrency handling
-- No soft-delete mechanism
-- No automated test suite
-
----
-
-## 🛣 Roadmap (v2 Planned)
-
-- Replace JSON with SQLite
-- Introduce Repository Layer
-- Add authentication
-- Convert to REST API (FastAPI)
-- Add unit testing (pytest)
-- Introduce soft-delete support
+```
+goku-bank-api/
+│
+├── main.py                # FastAPI application entry
+│
+├── database/
+│   ├── connection.py      # SQLite connection handler
+│   ├── init_db.py         # Database initialization
+│   └── schema.sql         # Database schema
+│
+├── repositories/          # Data access layer
+│   ├── account_repository.py
+│   ├── customer_repository.py
+│   └── transaction_repository.py
+│
+├── services/              # Business logic layer
+│   ├── banking_service.py
+│   └── logger.py
+│
+├── schemas/               # Request/Response models
+│   └── banking_schema.py
+│
+└── requirements.txt
+```
 
 ---
 
-## 🏷 Release Information
+# ⚙️ Setup Instructions
 
-**Tag:** `v1.0-cli-banking`  
-**Release Type:** Stable CLI Version  
-
-This tag represents a freeze-ready, restart-safe, ledger-consistent version of the system.
-
----
-
-## ▶ How to Run
+## 1️⃣ Clone the repository
 
 ```bash
-python main.py
-
+git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git
+cd goku-bank-api
 ```
 
 ---
 
-## 📁 Project Structure
+## 2️⃣ Install dependencies
 
+```bash
+pip install -r requirements.txt
 ```
-project/
-│
-├── main.py
-├── README.md
-├── Bank_exe.bat
-│
-└── models/
-├── init.py
-├── bank.py
-├── bank_account.py
-└── utils.py
-```
-Runtime files such as `accounts.json`, `statement_*.txt`, and `__pycache__/` are excluded from version control.
 
 ---
 
-## 👨‍💻 Author
+## 3️⃣ Initialize the database
 
-***Gokul Elangovan🐼***
-[Backend-focused learning project]
+```bash
+python -m database.init_db
+```
+
+This creates the SQLite database and tables.
+
+---
+
+## 4️⃣ Run the API server
+
+```bash
+uvicorn main:app --reload
+```
+
+---
+
+# 📘 API Documentation
+
+FastAPI automatically provides interactive documentation.
+
+Open:
+
+```
+http://127.0.0.1:8000/docs
+```
+
+You can test endpoints directly from the Swagger UI.
+
+---
+
+# 🔐 Example API Requests
+
+## Create Account
+
+POST `/create-account`
+
+```json
+{
+  "name": "Gokul",
+  "email": "gokul@email.com",
+  "phone": "7299169318"
+}
+```
+
+---
+
+## Deposit Money
+
+POST `/deposit`
+
+```json
+{
+  "account_number": "ACC1001",
+  "amount": 500
+}
+```
+
+---
+
+## Transfer Money
+
+POST `/transfer`
+
+```json
+{
+  "sender_account": "ACC1001",
+  "receiver_account": "ACC1002",
+  "amount": 200
+}
+```
+
+---
+
+# 📊 Logging
+
+All banking operations are logged.
+
+Example log entry:
+
+```
+INFO Deposit 1000 to ACC1001
+INFO Withdraw 200 from ACC1001
+INFO Transfer 300 from ACC1001 to ACC1002
+```
+
+---
+
+# 📚 Learning Objectives
+
+This project demonstrates:
+
+- Clean backend architecture
+- Repository & Service layer design
+- Transaction safety in financial operations
+- API validation with Pydantic
+- Logging and debugging practices
+
+---
+
+# 👨‍💻 Author
+
+**Gokul (Pappu 🐼)**  
+Backend Developer | Python Enthusiast
