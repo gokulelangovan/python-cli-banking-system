@@ -1,0 +1,13 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# SQLite databases
+*.db
+
+# logs
+logs/
+*.log
+
+# env
+.env
