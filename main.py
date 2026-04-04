@@ -13,21 +13,32 @@ def init_db():
     with get_connection() as conn:
         conn.executescript("""
         DROP TABLE IF EXISTS users;
-        
-        CREATE TABLE IF NOT EXISTS users (
+        DROP TABLE IF EXISTS customers;
+        DROP TABLE IF EXISTS accounts;
+        DROP TABLE IF EXISTS transactions;
+
+        CREATE TABLE users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             email TEXT UNIQUE,
-            hashed_password TEXT
+            hashed_password TEXT,
+            customer_id INTEGER
         );
 
-        CREATE TABLE IF NOT EXISTS accounts (
+        CREATE TABLE customers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            balance REAL,
+            full_name TEXT,
+            email TEXT UNIQUE,
+            phone TEXT
+        );
+
+        CREATE TABLE accounts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            customer_id INTEGER,
+            balance REAL DEFAULT 0,
             type TEXT
         );
 
-        CREATE TABLE IF NOT EXISTS transactions (
+        CREATE TABLE transactions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             from_account INTEGER,
             to_account INTEGER,
