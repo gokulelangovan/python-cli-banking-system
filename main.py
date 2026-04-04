@@ -12,10 +12,12 @@ from database.connection import get_connection
 def init_db():
     with get_connection() as conn:
         conn.executescript("""
+        DROP TABLE IF EXISTS users;
+        
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             email TEXT UNIQUE,
-            password TEXT
+            hashed_password TEXT
         );
 
         CREATE TABLE IF NOT EXISTS accounts (
