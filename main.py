@@ -7,6 +7,36 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 app = FastAPI(title="Goku Bank API 🚀")  # ✅ Only ONE app
 
+from database.connection import get_connection
+
+def init_db():
+    with get_connection() as conn:
+        conn.executescript("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT UNIQUE,
+            password TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS accounts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            balance REAL,
+            type TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS transactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            from_account INTEGER,
+            to_account INTEGER,
+            amount REAL,
+            reference TEXT
+        );
+        """)
+
+# 👇 CALL THIS AFTER app creation
+init_db()
+
 app.add_middleware(                        # ✅ Middleware right after
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
@@ -245,10 +275,14 @@ def my_transactions(user_id: int = Depends(get_current_user)):
         cursor = conn.execute("""
             SELECT t.*
             FROM transactions t
-            JOIN accounts a ON t.account_id = a.id
-            WHERE a.customer_id = ?
-            ORDER BY t.created_at DESC
-        """, (customer_id,))
+            WHERE t.from_account IN (
+                SELECT id FROM accounts WHERE customer_id = ?
+            )
+            OR t.to_account IN (
+                SELECT id FROM accounts WHERE customer_id = ?
+            )
+            ORDER BY t.id DESC
+        """, (customer_id, customer_id))
 
         transactions = [dict(row) for row in cursor.fetchall()]
 
