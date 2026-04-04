@@ -1,29 +1,77 @@
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import OAuth2PasswordRequestForm
-from database.connection import get_connection
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
-from schemas.banking_schema import (
-    CreateAccountRequest,
-    CreateAccountResponse,
-    DepositRequest,
-    WithdrawRequest,
-    TransferRequest
-)
-from schemas.auth_schema import UserRegister
+import sqlite3
+from passlib.context import CryptContext
+from jose import jwt, JWTError
+from datetime import datetime, timedelta
 
-from services.auth_service import AuthService
-from services.user_service import get_customer_id_by_user
-from services.auth_dependency import get_current_user
-from services.service_factory import get_banking_service
+# -----------------------------
+# CONFIG
+# -----------------------------
+SECRET_KEY = "secret"
+ALGORITHM = "HS256"
 
-from repositories.customer_repository import CustomerRepository
-from repositories.account_repository import AccountRepository
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
+# -----------------------------
+# DB
+# -----------------------------
+def get_connection():
+    conn = sqlite3.connect("bank.db")
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def init_db():
+    with get_connection() as conn:
+        conn.executescript("""
+
+        DROP TABLE IF EXISTS transactions;
+        DROP TABLE IF EXISTS accounts;
+        DROP TABLE IF EXISTS customers;
+        DROP TABLE IF EXISTS users;
+
+        CREATE TABLE users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT UNIQUE NOT NULL,
+            hashed_password TEXT NOT NULL,
+            customer_id INTEGER,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE customers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            full_name TEXT,
+            email TEXT UNIQUE,
+            phone TEXT
+        );
+
+        CREATE TABLE accounts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            customer_id INTEGER,
+            account_number TEXT UNIQUE,
+            account_type TEXT,
+            balance REAL DEFAULT 0
+        );
+
+        CREATE TABLE transactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            account_id INTEGER,
+            transaction_type TEXT,
+            amount REAL,
+            reference TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        """)
 
 # -----------------------------
 # APP
 # -----------------------------
 app = FastAPI(title="Goku Bank API 🚀")
+init_db()
 
 app.add_middleware(
     CORSMiddleware,
@@ -33,9 +81,28 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-auth_service = AuthService()
-customer_repo = CustomerRepository()
-account_repo = AccountRepository()
+# -----------------------------
+# AUTH HELPERS
+# -----------------------------
+def hash_password(password):
+    return pwd_context.hash(password)
+
+def verify_password(password, hashed):
+    return pwd_context.verify(password, hashed)
+
+def create_token(user_id):
+    payload = {
+        "sub": str(user_id),
+        "exp": datetime.utcnow() + timedelta(hours=2)
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return int(payload.get("sub"))
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 # -----------------------------
 # ROOT
@@ -48,247 +115,207 @@ def home():
 # REGISTER
 # -----------------------------
 @app.post("/register")
-def register(user: UserRegister):
-    try:
-        user_id = auth_service.register_user(user.email, user.password)
+def register(data: dict):
+    email = data.get("email")
+    password = data.get("password")
 
-        return {
-            "message": "User created successfully",
-            "user_id": user_id
-        }
+    if not email or not password:
+        raise HTTPException(status_code=400, detail="Email & password required")
 
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    hashed = hash_password(password)
+
+    with get_connection() as conn:
+        try:
+            cursor = conn.execute(
+                "INSERT INTO users (email, hashed_password) VALUES (?, ?)",
+                (email, hashed)
+            )
+            conn.commit()
+            return {"message": "User created", "user_id": cursor.lastrowid}
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
 
 # -----------------------------
 # LOGIN
 # -----------------------------
 @app.post("/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    try:
-        token = auth_service.login_user(
-            form_data.username,
-            form_data.password
-        )
+    with get_connection() as conn:
+        user = conn.execute(
+            "SELECT * FROM users WHERE email=?",
+            (form_data.username,)
+        ).fetchone()
 
-        return {
-            "access_token": token,
-            "token_type": "bearer"
-        }
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
 
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        if not verify_password(form_data.password, user["hashed_password"]):
+            raise HTTPException(status_code=400, detail="Wrong password")
+
+        token = create_token(user["id"])
+        return {"access_token": token, "token_type": "bearer"}
 
 # -----------------------------
 # CREATE ACCOUNT
 # -----------------------------
-@app.post("/create-account", response_model=CreateAccountResponse)
-def create_account(
-    request: CreateAccountRequest,
-    user_id: int = Depends(get_current_user)
-):
-    try:
-        with get_connection() as conn:
+@app.post("/create-account")
+def create_account(data: dict, user_id: int = Depends(get_current_user)):
+    name = data.get("full_name")
+    phone = data.get("phone")
+    acc_type = data.get("account_type", "savings")
 
-            user = conn.execute(
-                "SELECT email FROM users WHERE id=?",
-                (user_id,)
-            ).fetchone()
+    with get_connection() as conn:
 
-            # ✅ FIX: handle None
-            if not user:
-                raise HTTPException(status_code=404, detail="User not found")
+        user = conn.execute(
+            "SELECT * FROM users WHERE id=?",
+            (user_id,)
+        ).fetchone()
 
-            email = user["email"]
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
 
-            existing_customer = customer_repo.get_by_email(email)
+        email = user["email"]
 
-            if existing_customer:
-                customer_id = existing_customer["id"]
-            else:
-                customer_id = customer_repo.create_customer(
-                    request.full_name,
-                    email,
-                    request.phone
-                )
+        customer = conn.execute(
+            "SELECT * FROM customers WHERE email=?",
+            (email,)
+        ).fetchone()
 
-            conn.execute(
-                "UPDATE users SET customer_id=? WHERE id=?",
-                (customer_id, user_id)
+        if customer:
+            customer_id = customer["id"]
+        else:
+            cursor = conn.execute(
+                "INSERT INTO customers (full_name, email, phone) VALUES (?, ?, ?)",
+                (name, email, phone)
             )
-            conn.commit()
+            customer_id = cursor.lastrowid
 
-            account_number = account_repo.create_account(
-                customer_id,
-                request.account_type
-            )
+        conn.execute(
+            "UPDATE users SET customer_id=? WHERE id=?",
+            (customer_id, user_id)
+        )
 
-            return {
-                "message": "Account created successfully",
-                "account_number": account_number
-            }
+        account_number = f"ACC{int(datetime.utcnow().timestamp())}"
 
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        cursor = conn.execute(
+            "INSERT INTO accounts (customer_id, account_number, account_type) VALUES (?, ?, ?)",
+            (customer_id, account_number, acc_type)
+        )
+
+        conn.commit()
+
+        return {
+            "account_number": account_number
+        }
 
 # -----------------------------
 # DEPOSIT
 # -----------------------------
 @app.post("/deposit")
-def deposit(
-    request: DepositRequest,
-    service=Depends(get_banking_service),
-    user_id: int = Depends(get_current_user)
-):
-    try:
-        new_balance = service.deposit(
-            request.account_number,
-            request.amount
+def deposit(data: dict, user_id: int = Depends(get_current_user)):
+    acc = data["account_number"]
+    amount = data["amount"]
+
+    with get_connection() as conn:
+        account = conn.execute(
+            "SELECT * FROM accounts WHERE account_number=?",
+            (acc,)
+        ).fetchone()
+
+        if not account:
+            raise HTTPException(status_code=404, detail="Account not found")
+
+        conn.execute(
+            "UPDATE accounts SET balance = balance + ? WHERE account_number=?",
+            (amount, acc)
         )
 
-        return {
-            "message": "Deposit successful",
-            "new_balance": new_balance
-        }
-
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-# -----------------------------
-# WITHDRAW
-# -----------------------------
-@app.post("/withdraw")
-def withdraw(
-    request: WithdrawRequest,
-    service=Depends(get_banking_service),
-    user_id: int = Depends(get_current_user)
-):
-    try:
-        new_balance = service.withdraw(
-            request.account_number,
-            request.amount
+        conn.execute(
+            "INSERT INTO transactions (account_id, transaction_type, amount, reference) VALUES (?, ?, ?, ?)",
+            (account["id"], "deposit", amount, "deposit")
         )
 
-        return {
-            "message": "Withdrawal successful",
-            "new_balance": new_balance
-        }
+        conn.commit()
 
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return {"message": "Deposit successful"}
 
 # -----------------------------
 # TRANSFER
 # -----------------------------
 @app.post("/transfer")
-def transfer(
-    request: TransferRequest,
-    service=Depends(get_banking_service),
-    user_id: int = Depends(get_current_user)
-):
-    try:
-        customer_id = get_customer_id_by_user(user_id)
+def transfer(data: dict, user_id: int = Depends(get_current_user)):
+    sender = data["from_account"]
+    receiver = data["to_account"]
+    amount = data["amount"]
 
-        if not customer_id:
-            raise HTTPException(status_code=404, detail="Customer not found")
+    with get_connection() as conn:
 
-        sender_account = account_repo.get_by_account_number(request.sender_account)
+        s = conn.execute(
+            "SELECT * FROM accounts WHERE account_number=?",
+            (sender,)
+        ).fetchone()
 
-        # ✅ FIX: handle None
-        if not sender_account:
-            raise HTTPException(status_code=404, detail="Sender account not found")
+        r = conn.execute(
+            "SELECT * FROM accounts WHERE account_number=?",
+            (receiver,)
+        ).fetchone()
 
-        if sender_account["customer_id"] != customer_id:
-            raise HTTPException(status_code=403, detail="Unauthorized")
+        if not s or not r:
+            raise HTTPException(status_code=404, detail="Account not found")
 
-        return service.transfer(
-            request.sender_account,
-            request.receiver_account,
-            request.amount
+        if s["balance"] < amount:
+            raise HTTPException(status_code=400, detail="Insufficient balance")
+
+        conn.execute(
+            "UPDATE accounts SET balance = balance - ? WHERE id=?",
+            (amount, s["id"])
+        )
+        conn.execute(
+            "UPDATE accounts SET balance = balance + ? WHERE id=?",
+            (amount, r["id"])
         )
 
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        conn.execute(
+            "INSERT INTO transactions (account_id, transaction_type, amount, reference) VALUES (?, ?, ?, ?)",
+            (s["id"], "transfer", amount, f"to {receiver}")
+        )
 
-# -----------------------------
-# MY ACCOUNTS
-# -----------------------------
-@app.get("/my-accounts")
-def my_accounts(
-    service=Depends(get_banking_service),
-    user_id: int = Depends(get_current_user)
-):
-    try:
-        customer_id = get_customer_id_by_user(user_id)
+        conn.commit()
 
-        if not customer_id:
-            raise HTTPException(status_code=404, detail="Customer not found")
-
-        customer = customer_repo.get_customer_by_id(customer_id)
-
-        # ✅ FIX: handle None
-        if not customer:
-            raise HTTPException(status_code=404, detail="Customer not found")
-
-        accounts = service.get_my_accounts(customer_id)
-
-        return {
-            "customer": {
-                "name": customer["full_name"],
-                "email": customer["email"],
-                "phone": customer["phone"]
-            },
-            "accounts": [dict(a) for a in accounts]
-        }
-
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return {"message": "Transfer successful"}
 
 # -----------------------------
 # MY TRANSACTIONS
 # -----------------------------
 @app.get("/my-transactions")
 def my_transactions(user_id: int = Depends(get_current_user)):
-    try:
-        customer_id = get_customer_id_by_user(user_id)
 
-        if not customer_id:
-            raise HTTPException(status_code=404, detail="Customer not found")
+    with get_connection() as conn:
 
-        with get_connection() as conn:
-            cursor = conn.execute("""
-                SELECT t.*
-                FROM transactions t
-                WHERE t.account_id IN (
-                    SELECT id FROM accounts WHERE customer_id = ?
-                )
-                ORDER BY t.id DESC
-            """, (customer_id,))
+        user = conn.execute(
+            "SELECT * FROM users WHERE id=?",
+            (user_id,)
+        ).fetchone()
 
-            transactions = [dict(row) for row in cursor.fetchall()]
+        if not user or not user["customer_id"]:
+            return []
 
-        return transactions
+        accounts = conn.execute(
+            "SELECT id FROM accounts WHERE customer_id=?",
+            (user["customer_id"],)
+        ).fetchall()
 
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        account_ids = [a["id"] for a in accounts]
 
-# -----------------------------
-# PROFILE
-# -----------------------------
-@app.get("/my-profile")
-def my_profile(user_id: int = Depends(get_current_user)):
-    try:
-        customer_id = get_customer_id_by_user(user_id)
+        if not account_ids:
+            return []
 
-        if not customer_id:
-            raise HTTPException(status_code=404, detail="Customer not found")
+        query = f"""
+        SELECT * FROM transactions
+        WHERE account_id IN ({','.join(['?']*len(account_ids))})
+        ORDER BY id DESC
+        """
 
-        customer = customer_repo.get_customer_by_id(customer_id)
+        rows = conn.execute(query, account_ids).fetchall()
 
-        if not customer:
-            raise HTTPException(status_code=404, detail="Customer not found")
-
-        return dict(customer)
-
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return [dict(r) for r in rows]
